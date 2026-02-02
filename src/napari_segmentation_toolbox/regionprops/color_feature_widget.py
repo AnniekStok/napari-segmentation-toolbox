@@ -66,7 +66,8 @@ class ColorFeatureWidget(BaseToolWidget):
         layer_data = self.layer.data
         if isinstance(layer_data, da.core.Array):
             layer_data = layer_data.compute()
-        layer_data = np.asarray(layer_data, dtype=self.layer.data.dtype)
+        # Force a writable copy (np.asarray doesn't guarantee writability)
+        layer_data = np.array(layer_data, copy=True)
 
         image = map_array(
             layer_data,
