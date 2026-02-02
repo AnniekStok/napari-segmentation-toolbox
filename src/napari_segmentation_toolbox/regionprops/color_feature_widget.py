@@ -62,16 +62,18 @@ class ColorFeatureWidget(BaseToolWidget):
 
         feature = self.property.currentText()
 
-        # Ensure data is a writable numpy array (handle dask arrays and read-only views)
+        # Ensure all data is writable numpy arrays (handle dask arrays and read-only views)
         layer_data = self.layer.data
         if isinstance(layer_data, da.core.Array):
             layer_data = layer_data.compute()
-        # Force a writable copy (np.asarray doesn't guarantee writability)
+        # Force writable copies for all inputs to map_array
         layer_data = np.array(layer_data, copy=True)
+        input_vals = np.array(self.layer.properties["label"], copy=True)
+        output_vals = np.array(self.layer.properties[feature], copy=True)
 
         image = map_array(
             layer_data,
-            self.layer.properties["label"],
-            self.layer.properties[feature],
+            input_vals,
+            output_vals,
         ).astype(np.float32)
         self.viewer.add_image(image, colormap="turbo", scale=self.layer.scale)
