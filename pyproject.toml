@@ -35,7 +35,7 @@ dependencies = [
     "dask[array] <= 2025",
     "dask_image <= 2025",
     "matplotlib < 3.9",
-    "napari-orthogonal-views >= 0.0.7",
+    "napari-orthogonal-views >= 0.1.0",
 ]
 
 [project.urls]
