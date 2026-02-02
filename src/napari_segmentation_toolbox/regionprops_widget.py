@@ -1,3 +1,5 @@
+import contextlib
+
 import dask.array as da
 import napari
 import numpy as np
@@ -162,7 +164,7 @@ class RegionPropsWidget(BaseToolWidget):
 
         self.tab_widget = QTabWidget(self)
         self.table = None
-        self._source_callback = None
+        self._source_props_callback = None
 
         intensity_box = QGroupBox("Intensity features")
         intensity_box.setMaximumHeight(140)
@@ -185,7 +187,10 @@ class RegionPropsWidget(BaseToolWidget):
             checkbox.stateChanged.connect(self._update_measure_btn_state)
 
             self.checkboxes.append(
-                {"region_prop_name": prop["region_prop_name"], "checkbox": checkbox}
+                {
+                    "region_prop_name": prop["region_prop_name"],
+                    "checkbox": checkbox,
+                }
             )
             self.intensity_checkbox_layout.addWidget(checkbox)
 
@@ -198,7 +203,10 @@ class RegionPropsWidget(BaseToolWidget):
             checkbox.stateChanged.connect(self._update_measure_btn_state)
 
             self.checkboxes.append(
-                {"region_prop_name": prop["region_prop_name"], "checkbox": checkbox}
+                {
+                    "region_prop_name": prop["region_prop_name"],
+                    "checkbox": checkbox,
+                }
             )
             self.shape_checkbox_layout.addWidget(checkbox)
 
@@ -283,23 +291,23 @@ class RegionPropsWidget(BaseToolWidget):
                 )
 
                 append = "Control" in event.modifiers
-                self.table.select_label(event.position, selected_label, append=append)
+                self.table.select_label(
+                    event.position, selected_label, append=append
+                )
 
         return callback
 
     def update_properties_and_callback(self) -> None:
         """Update the available properties based on the selected label layer dimensions"""
-
-        if self.layer is not None and self._source_callback is not None:
-            try:
-                self.layer.mouse_drag_callbacks.remove(self._source_callback)
-                self.layer.contour = 0
-            except ValueError:
-                pass
+        if self.layer is not None and self._source_props_callback is not None:
+            with contextlib.suppress(ValueError):
+                self.layer.mouse_drag_callbacks.remove(
+                    self._source_props_callback
+                )
 
         if self.layer is not None:
-            self._source_callback = self._table_callback(self.layer)
-            self.layer.mouse_drag_callbacks.append(self._source_callback)
+            self._source_props_callback = self._table_callback(self.layer)
+            self.layer.mouse_drag_callbacks.append(self._source_props_callback)
 
         if self.layer is not None and "dimensions" in self.layer.metadata:
             dims = self.layer.metadata["dimensions"]
@@ -348,7 +356,9 @@ class RegionPropsWidget(BaseToolWidget):
 
         # Remove spacing entries for C/T so spacing aligns with spatial dims
         spatial_spacing = [
-            s for s, d in zip(spacing, dims, strict=False) if d not in ("C", "T")
+            s
+            for s, d in zip(spacing, dims, strict=False)
+            if d not in ("C", "T")
         ]
 
         # selected features
@@ -363,7 +373,10 @@ class RegionPropsWidget(BaseToolWidget):
         else:
             intensity = None
 
-        if intensity_layer is not None and "dimensions" not in intensity_layer.metadata:
+        if (
+            intensity_layer is not None
+            and "dimensions" not in intensity_layer.metadata
+        ):
             msg = QMessageBox()
             msg.setWindowTitle("Missing metadata")
             msg.setText(
@@ -392,7 +405,9 @@ class RegionPropsWidget(BaseToolWidget):
             channel_axis -= 1  # because we slice time first
 
         if intensity is not None:
-            intensity, intensity_dims = reorder_array(dims, intensity_dims, intensity)
+            intensity, intensity_dims = reorder_array(
+                dims, intensity_dims, intensity
+            )
 
         # prepare for nested loops over T and C
         prop_list = []
@@ -403,7 +418,9 @@ class RegionPropsWidget(BaseToolWidget):
 
                 for c in tqdm(c_range, desc="Channel", leave=False):
                     data_tc = (
-                        slice_axis(data_t, c, channel_axis) if has_channel else data_t
+                        slice_axis(data_t, c, channel_axis)
+                        if has_channel
+                        else data_t
                     )
 
                     # slice intensity if present

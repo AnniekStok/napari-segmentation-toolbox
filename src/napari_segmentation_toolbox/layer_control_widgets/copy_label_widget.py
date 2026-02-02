@@ -83,7 +83,7 @@ class CopyLabelWidget(QWidget):
 
         self.source_layer = None
         self.target_layer = None
-        self._source_callback = None
+        self._source_copy_callback = None
 
         copy_labels_box = QGroupBox("Copy-paste labels")
         copy_labels_layout = QVBoxLayout()
@@ -111,7 +111,9 @@ class CopyLabelWidget(QWidget):
         image_layout = QVBoxLayout()
         source_layout = QHBoxLayout()
         source_layout.addWidget(QLabel("Source labels"))
-        self.source_dropdown = LayerDropdown(self.viewer, (Labels), allow_none=True)
+        self.source_dropdown = LayerDropdown(
+            self.viewer, (Labels), allow_none=True
+        )
         self.source_dropdown.viewer.layers.selection.events.changed.disconnect(
             self.source_dropdown._on_selection_changed
         )
@@ -120,7 +122,9 @@ class CopyLabelWidget(QWidget):
 
         target_layout = QHBoxLayout()
         target_layout.addWidget(QLabel("Target labels"))
-        self.target_dropdown = LayerDropdown(self.viewer, (Labels), allow_none=True)
+        self.target_dropdown = LayerDropdown(
+            self.viewer, (Labels), allow_none=True
+        )
         self.target_dropdown.viewer.layers.selection.events.changed.disconnect(
             self.target_dropdown._on_selection_changed
         )
@@ -155,21 +159,30 @@ class CopyLabelWidget(QWidget):
         """Update the layer that is set to be the 'source labels' layer for copying
         labels from."""
 
-        if self.source_layer is not None and self._source_callback is not None:
+        if (
+            self.source_layer is not None
+            and self._source_copy_callback is not None
+        ):
             try:
-                self.source_layer.mouse_drag_callbacks.remove(self._source_callback)
+                self.source_layer.mouse_drag_callbacks.remove(
+                    self._source_copy_callback
+                )
                 self.source_layer.contour = 0
             except ValueError:
                 pass
         if selected_layer == "":
             self.source_layer = None
-            self._source_callback = None
+            self._source_copy_callback = None
         else:
             self.source_layer = self.viewer.layers[selected_layer]
             self.source_layer.contour = 1
             self.source_dropdown.setCurrentText(selected_layer)
-            self._source_callback = self._make_copy_label_callback(self.source_layer)
-            self.source_layer.mouse_drag_callbacks.append(self._source_callback)
+            self._source_copy_callback = self._make_copy_label_callback(
+                self.source_layer
+            )
+            self.source_layer.mouse_drag_callbacks.append(
+                self._source_copy_callback
+            )
 
         self.update_radiobuttons()
 
@@ -226,7 +239,9 @@ class CopyLabelWidget(QWidget):
 
         return callback
 
-    def copy_label(self, event: Event, source_layer: Labels | None = None) -> None:
+    def copy_label(
+        self, event: Event, source_layer: Labels | None = None
+    ) -> None:
         """Copy a 2D/3D/4D label from this layer to a target layer"""
 
         if self.source_layer is None or self.target_layer is None:
@@ -257,7 +272,9 @@ class CopyLabelWidget(QWidget):
                 return
 
         # extract label value from source layer (orthoview or self.source_layer)
-        source_layer = source_layer if source_layer is not None else self.source_layer
+        source_layer = (
+            source_layer if source_layer is not None else self.source_layer
+        )
         selected_label = source_layer.get_value(
             event.position,
             view_direction=event.view_direction,
@@ -279,7 +296,9 @@ class CopyLabelWidget(QWidget):
         ndims_target = len(self.target_layer.data.shape)
 
         # Assign a new label value if None is provided
-        target_label = selected_label if self.preserve_label_value.isChecked() else None
+        target_label = (
+            selected_label if self.preserve_label_value.isChecked() else None
+        )
         if target_label is None:
             target_label = np.max(self.target_layer.data) + 1
 
@@ -299,7 +318,9 @@ class CopyLabelWidget(QWidget):
                 msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
                 result = msg.exec_()
                 if result == QMessageBox.Ok:  # Check if Ok was clicked
-                    self.target_layer.data = self.target_layer.data.astype(next_dtype)
+                    self.target_layer.data = self.target_layer.data.astype(
+                        next_dtype
+                    )
                 else:
                     return
 
@@ -332,7 +353,9 @@ class CopyLabelWidget(QWidget):
         if n_dims_copied == 2:
             # Create a list of `slice(None)` for all dimensions of self.source_layer.data
             if dims_difference < 0:
-                dims_displayed = [dim + dims_difference for dim in dims_displayed]
+                dims_displayed = [
+                    dim + dims_difference for dim in dims_displayed
+                ]
             for i in range(ndims_source):
                 if i not in dims_displayed:
                     source_slices[i] = coords[
@@ -365,10 +388,13 @@ class CopyLabelWidget(QWidget):
         # Create mask
         if isinstance(self.source_layer.data, da.core.Array):
             mask = (
-                self.source_layer.data[tuple(source_slices)].compute() == selected_label
+                self.source_layer.data[tuple(source_slices)].compute()
+                == selected_label
             )
         else:
-            mask = self.source_layer.data[tuple(source_slices)] == selected_label
+            mask = (
+                self.source_layer.data[tuple(source_slices)] == selected_label
+            )
 
         # Select the correct stack for 2D/3D/4D data
         orig_label = self.target_layer.data[tuple(coords_clipped)]
