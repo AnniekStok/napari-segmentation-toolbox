@@ -4,7 +4,14 @@ import numpy as np
 import pandas as pd
 from matplotlib.colors import to_rgba
 from napari.utils import DirectLabelColormap
-from qtpy.QtCore import QEvent, QItemSelectionModel, QModelIndex, QObject, Qt, QTimer
+from qtpy.QtCore import (
+    QEvent,
+    QItemSelectionModel,
+    QModelIndex,
+    QObject,
+    Qt,
+    QTimer,
+)
 from qtpy.QtGui import QColor, QPen
 from qtpy.QtWidgets import (
     QAbstractItemView,
@@ -53,10 +60,14 @@ class ClickToSingleSelectFilter(QObject):
         self.table = table_widget
 
     def eventFilter(self, obj, event):
-        if event.type() == QEvent.MouseButtonPress and event.button() == Qt.LeftButton:
+        if (
+            event.type() == QEvent.MouseButtonPress
+            and event.button() == Qt.LeftButton
+        ):
             modifiers = event.modifiers()
             if not (
-                modifiers & (Qt.ShiftModifier | Qt.ControlModifier | Qt.MetaModifier)
+                modifiers
+                & (Qt.ShiftModifier | Qt.ControlModifier | Qt.MetaModifier)
             ):
                 self.table.clearSelection()
             return False
@@ -86,7 +97,9 @@ class CustomTableWidget(QTableWidget):
         if index.isValid():
             control = bool(event.modifiers() & Qt.ControlModifier)
             right = event.button() == Qt.RightButton
-            self.parent()._clicked_table(right=right, ctrl=control, index=index)
+            self.parent()._clicked_table(
+                right=right, ctrl=control, index=index
+            )
 
         # Call super so selection behavior still works
         super().mousePressEvent(event)
@@ -95,7 +108,9 @@ class CustomTableWidget(QTableWidget):
 class ColoredTableWidget(QWidget):
     """Customized table widget with colored rows based on label colors in a napari Labels layer"""
 
-    def __init__(self, layer: "napari.layers.Layer", viewer: "napari.Viewer" = None):
+    def __init__(
+        self, layer: "napari.layers.Layer", viewer: "napari.Viewer" = None
+    ):
         super().__init__()
 
         self._layer = layer
@@ -104,15 +119,21 @@ class ColoredTableWidget(QWidget):
         self.special_selection = []
 
         self._layer.events.colormap.connect(self._set_label_colors_to_rows)
-        self._layer.events.show_selected_label.connect(self._set_label_colors_to_rows)
+        self._layer.events.show_selected_label.connect(
+            self._set_label_colors_to_rows
+        )
         if hasattr(layer, "properties"):
             self._set_data(layer.properties)
         else:
             self._set_data({})
-        self.ascending = False  # for choosing whether to sort ascending or descending
+        self.ascending = (
+            False  # for choosing whether to sort ascending or descending
+        )
 
         # Connect to single click in the header to sort the table.
-        self._table_widget.horizontalHeader().sectionClicked.connect(self._sort_table)
+        self._table_widget.horizontalHeader().sectionClicked.connect(
+            self._sort_table
+        )
 
         # Instruction label to explain left and right mouse click.
         label = QLabel(
@@ -176,7 +197,9 @@ class ColoredTableWidget(QWidget):
             }
         """)
 
-        self._table_widget.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self._table_widget.setSelectionMode(
+            QAbstractItemView.ExtendedSelection
+        )
         self._table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         self._click_filter = ClickToSingleSelectFilter(self._table_widget)
@@ -199,13 +222,17 @@ class ColoredTableWidget(QWidget):
             pass
 
         for i, column in enumerate(table):
-            self._table_widget.setHorizontalHeaderItem(i, QTableWidgetItem(column))
+            self._table_widget.setHorizontalHeaderItem(
+                i, QTableWidgetItem(column)
+            )
             for j, value in enumerate(table.get(column)):
                 item = QTableWidgetItem(str(value))
                 item.setFlags(item.flags() & ~Qt.ItemIsEditable)
                 self._table_widget.setItem(j, i, item)
 
-        self._table_widget.setItemDelegate(FloatDelegate(3, self._table_widget))
+        self._table_widget.setItemDelegate(
+            FloatDelegate(3, self._table_widget)
+        )
 
         self._set_label_colors_to_rows()
 
@@ -228,14 +255,18 @@ class ColoredTableWidget(QWidget):
             qcolor = QColor(r, g, b)
 
             luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
-            text_color = QColor(0, 0, 0) if luminance > 140 else QColor(255, 255, 255)
+            text_color = (
+                QColor(0, 0, 0) if luminance > 140 else QColor(255, 255, 255)
+            )
 
             for j in range(self._table_widget.columnCount()):
                 item = self._table_widget.item(i, j)
                 item.setBackground(qcolor)
                 item.setForeground(text_color)
 
-    def _clicked_table(self, right: bool, ctrl: bool, index: QModelIndex) -> None:
+    def _clicked_table(
+        self, right: bool, ctrl: bool, index: QModelIndex
+    ) -> None:
         """Center the viewer to clicked label. If the left mouse button was used,
         highlight the selected label(s) in layer. If the right mouse button was used, hide
         all other labels entirely by modifiying the colormap.
@@ -250,8 +281,12 @@ class ColoredTableWidget(QWidget):
         row = index.row()
         label = self._table["label"][row]
         self._layer.selected_label = label
-        spatial_columns = sorted([key for key in self._table if "centroid" in key])
-        spatial_coords = [int(self._table[col][row]) for col in spatial_columns]
+        spatial_columns = sorted(
+            [key for key in self._table if "centroid" in key]
+        )
+        spatial_coords = [
+            int(self._table[col][row]) for col in spatial_columns
+        ]
 
         if "dimensions" in self._layer.metadata:
             dims = self._layer.metadata["dimensions"]
@@ -497,7 +532,9 @@ class ColoredTableWidget(QWidget):
                 self._reset_layer_colormap()
                 return
 
-            selected_labels = [self._table["label"][row] for row in selected_rows]
+            selected_labels = [
+                self._table["label"][row] for row in selected_rows
+            ]
             for key, color in self._layer.colormap.color_dict.items():
                 if key is not None and key != 0:
                     color[-1] = 0.6
@@ -522,10 +559,14 @@ class ColoredTableWidget(QWidget):
                 color_dict=self._layer.colormap.color_dict
             )
 
-    def _sort_table(self) -> None:
-        """Sorts the table in ascending or descending order"""
+    def _sort_table(self, column_index: int) -> None:
+        """Sorts the table in ascending or descending order
 
-        selected_column = list(self._table.keys())[self._table_widget.currentColumn()]
+        Args:
+            column_index (int): The index of the clicked column header
+        """
+
+        selected_column = list(self._table.keys())[column_index]
         df = pd.DataFrame(self._table).sort_values(
             by=selected_column, ascending=self.ascending
         )
@@ -537,7 +578,9 @@ class ColoredTableWidget(QWidget):
     def _save_table(self) -> None:
         """Save table to csv file"""
 
-        filename, _ = QFileDialog.getSaveFileName(self, "Save as csv", ".", "*.csv")
+        filename, _ = QFileDialog.getSaveFileName(
+            self, "Save as csv", ".", "*.csv"
+        )
         pd.DataFrame(self._table).to_csv(filename)
 
     def _copy_table(self) -> None:
