@@ -1,3 +1,4 @@
+import dask.array as da
 import napari
 import numpy as np
 from qtpy.QtWidgets import (
@@ -60,8 +61,15 @@ class ColorFeatureWidget(BaseToolWidget):
         property"""
 
         feature = self.property.currentText()
+
+        # Ensure data is a writable numpy array (handle dask arrays and read-only views)
+        layer_data = self.layer.data
+        if isinstance(layer_data, da.core.Array):
+            layer_data = layer_data.compute()
+        layer_data = np.asarray(layer_data, dtype=self.layer.data.dtype)
+
         image = map_array(
-            self.layer.data,
+            layer_data,
             self.layer.properties["label"],
             self.layer.properties[feature],
         ).astype(np.float32)
