@@ -37,13 +37,26 @@ class LabelToolbox(QWidget):
         ### activate orthogonal views and register custom function
         def label_options_click_hook(orig_layer, copied_layer):
             copied_layer.mouse_drag_callbacks.append(
-                lambda layer, event: self.layer_controls.copy_label_widget.sync_click(
+                lambda layer,
+                event: self.layer_controls.copy_label_widget.sync_click(
+                    orig_layer, layer, event
+                )
+            )
+
+        def label_table_click_hook(orig_layer, copied_layer):
+            copied_layer.mouse_drag_callbacks.append(
+                lambda layer, event: self.regionprops_widget.sync_label_click(
                     orig_layer, layer, event
                 )
             )
 
         self.orth_view_manager = _get_manager(self.viewer)
-        self.orth_view_manager.register_layer_hook(Labels, label_options_click_hook)
+        self.orth_view_manager.register_layer_hook(
+            Labels, label_options_click_hook
+        )
+        self.orth_view_manager.register_layer_hook(
+            Labels, label_table_click_hook
+        )
 
         ### Add layer controls widget to tab
         controls_scroll_area = QScrollArea()

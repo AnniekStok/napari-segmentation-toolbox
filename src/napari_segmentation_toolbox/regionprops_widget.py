@@ -4,6 +4,8 @@ import dask.array as da
 import napari
 import numpy as np
 import pandas as pd
+from napari.layers import Labels
+from napari.utils.events import Event
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -282,19 +284,42 @@ class RegionPropsWidget(BaseToolWidget):
                 and self.table is not None
                 and self.table.isVisible()
             ):
-                selected_label = layer.get_value(
-                    event.position,
-                    view_direction=event.view_direction,
-                    dims_displayed=event.dims_displayed,
-                    world=True,
-                )
-
-                append = "Control" in event.modifiers
-                self.table.select_label(
-                    event.position, selected_label, append=append
-                )
+                self._process_click(event)
 
         return callback
+
+    def _process_click(self, event: Event, source_layer: Labels | None = None):
+        """Process a click event on the current layer, or on an orthoview layer if
+        provided"""
+
+        source_layer = source_layer if source_layer is not None else self.layer
+        if source_layer is not None:
+            selected_label = source_layer.get_value(
+                event.position,
+                view_direction=event.view_direction,
+                dims_displayed=event.dims_displayed,
+                world=True,
+            )
+
+            append = "Control" in event.modifiers
+            self.table.select_label(
+                event.position, selected_label, append=append
+            )
+
+    def sync_label_click(
+        self, orig_layer: Labels, copied_layer: Labels, event: Event
+    ) -> None:
+        """Forward the click event from orthogonal views"""
+
+        if (
+            orig_layer is self.layer
+            and event.type == "mouse_press"
+            and self.table is not None
+            and self.table.isVisible()
+        ):
+            # pass the copied layer for extracting the label value, because an orthoview
+            # was used
+            self._process_click(event, copied_layer)
 
     def update_properties_and_callback(self) -> None:
         """Update the available properties based on the selected label layer dimensions"""
