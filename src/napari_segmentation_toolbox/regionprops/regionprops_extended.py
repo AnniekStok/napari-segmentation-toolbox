@@ -48,7 +48,9 @@ class ExtendedRegionProperties(RegionProperties):
         i_xy = np.sum(x * y)
         i_xz = np.sum(x * z)
         i_yz = np.sum(y * z)
-        i = np.array([[i_xx, -i_xy, -i_xz], [-i_xy, i_yy, -i_yz], [-i_xz, -i_yz, i_zz]])
+        i = np.array(
+            [[i_xx, -i_xy, -i_xz], [-i_xy, i_yy, -i_yz], [-i_xz, -i_yz, i_zz]]
+        )
 
         # Compute the eigenvalues and eigenvectors of the inertia tensor. The eigenvalues
         # of the inertia tensor represent the principal moments of inertia, and the
@@ -122,8 +124,13 @@ class ExtendedRegionProperties(RegionProperties):
         Returns:
             float: The surface area of the region.
         """
+
+        region = self.image
+        if any(s < 2 for s in region.shape):
+            region = np.pad(region, 1)
+
         verts, faces, _, _ = marching_cubes(
-            self.image, level=0.5, spacing=self._spacing
+            region, level=0.5, spacing=self._spacing
         )
         surface_area = mesh_surface_area(verts, faces)
         return surface_area
@@ -172,7 +179,9 @@ class ExtendedRegionProperties(RegionProperties):
 
 
 def regionprops_extended(
-    img: np.ndarray, spacing: tuple[float], intensity_image: np.ndarray | None = None
+    img: np.ndarray,
+    spacing: tuple[float],
+    intensity_image: np.ndarray | None = None,
 ) -> list[ExtendedRegionProperties]:
     """
     Create instances of ExtendedRegionProperties that extend
@@ -186,7 +195,9 @@ def regionprops_extended(
     Returns:
         list[ExtendedRegionProperties]: A list of ExtendedRegionProperties instances.
     """
-    results = regionprops(img, intensity_image=intensity_image, spacing=spacing)
+    results = regionprops(
+        img, intensity_image=intensity_image, spacing=spacing
+    )
     for i, _ in enumerate(results):
         a = results[i]
         b = ExtendedRegionProperties(
@@ -212,7 +223,9 @@ def props_to_dataframe(regionprops, selected_properties=None) -> pd.DataFrame:
     new_props = ["label"]
     # need to check if any of the props return multiple values
     for item in selected_properties:
-        if isinstance(getattr(regionprops[0], item), tuple | np.ndarray | list):
+        if isinstance(
+            getattr(regionprops[0], item), tuple | np.ndarray | list
+        ):
             for i, _ in enumerate(getattr(regionprops[0], item)):
                 new_props.append(item + "-" + str(i + 1))
         else:
@@ -246,4 +259,8 @@ def calculate_extended_props(
     props = regionprops_extended(
         image, spacing=spacing, intensity_image=intensity_image
     )
-    return props_to_dataframe(props, properties) if len(props) > 0 else pd.DataFrame()
+    return (
+        props_to_dataframe(props, properties)
+        if len(props) > 0
+        else pd.DataFrame()
+    )
