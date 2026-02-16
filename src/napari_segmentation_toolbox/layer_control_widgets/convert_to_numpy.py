@@ -22,18 +22,24 @@ class ConvertToNumpyWidget(BaseToolWidget):
         ### Add option to convert dask array to in-memory array
         self.convert_to_array_btn = QPushButton("Convert to in-memory array")
         self.convert_to_array_btn.setEnabled(
-            self.layer is not None and isinstance(self.layer.data, da.core.Array)
+            self.layer is not None
+            and isinstance(self.layer.data, da.core.Array)
         )
         self.convert_to_array_btn.clicked.connect(self._convert_to_array)
-        self.update_status.connect(
-            lambda: self.convert_to_array_btn.setEnabled(
-                self.layer is not None and isinstance(self.layer.data, da.core.Array)
-            )
-        )
+        self.update_status.connect(self._update_button_state)
 
         layout = QVBoxLayout()
         layout.addWidget(self.convert_to_array_btn)
         self.setLayout(layout)
+
+    def _update_button_state(self):
+        if self.layer is None:
+            self.convert_to_array_btn.setEnabled(False)
+            return
+
+        self.convert_to_array_btn.setEnabled(
+            isinstance(self.layer.data, da.core.Array)
+        )
 
     def _convert_to_array(self) -> None:
         """Convert from dask array to in-memory array. This is necessary for manual
