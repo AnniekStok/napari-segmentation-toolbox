@@ -3,7 +3,7 @@ import napari
 import numpy as np
 import pandas as pd
 from matplotlib.colors import to_rgba
-from napari.utils import DirectLabelColormap
+from napari.utils import CyclicLabelColormap, DirectLabelColormap
 from qtpy.QtCore import (
     QEvent,
     QItemSelectionModel,
@@ -235,6 +235,25 @@ class ColoredTableWidget(QWidget):
         )
 
         self._set_label_colors_to_rows()
+
+    def _convert_layer_colormap(self):
+        """replace cyclic map by direct map if necessary"""
+
+        if isinstance(self._layer.colormap, CyclicLabelColormap):
+            labels = list(self._layer.properties["label"])
+
+            # Add some extra labels for painting new regions, since 'M'/new label will not
+            # assign new colors for a DirectLabelColormap.
+            extra_labels = list(range(np.max(labels) + 1, np.max(labels) + 50))
+            labels = labels + extra_labels
+
+            colors = [self._layer.colormap.map(label) for label in labels]
+            self._layer.colormap = DirectLabelColormap(
+                color_dict={
+                    **dict(zip(labels, colors, strict=True)),
+                    None: [0, 0, 0, 0],
+                }
+            )
 
     def _set_label_colors_to_rows(self) -> None:
         """Apply the colors of the napari label image to the table"""
@@ -514,9 +533,12 @@ class ColoredTableWidget(QWidget):
 
     def _update_label_colormap(self) -> None:
         """
-        Highlight the labels of selected rows. Assumes the layer already has a
-        DirectLabelColormap.
+        Highlight the labels of selected rows. Converts colormap to DirectLabelColormap if
+        needed.
         """
+
+        if isinstance(self._layer.colormap, CyclicLabelColormap):
+            self._convert_layer_colormap()
 
         # in case of right-click on the table, we should only show the selected label(s)
         if len(self.special_selection) != 0:
