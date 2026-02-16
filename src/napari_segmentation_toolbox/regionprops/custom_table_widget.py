@@ -332,9 +332,12 @@ class ColoredTableWidget(QWidget):
                 a new selection
         """
 
-        if label is None or label == 0:
+        if (
+            label is None
+            or label == 0
+            or self._layer.colormap.map(label)[-1] == 0
+        ):
             self._table_widget.clearSelection()
-            self._reset_layer_colormap()
             return
 
         t = None
