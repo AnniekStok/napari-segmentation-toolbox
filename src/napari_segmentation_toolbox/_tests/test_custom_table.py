@@ -24,7 +24,7 @@ def setup_props_widget(make_napari_viewer, qtbot, img_4d):
     qtbot.addWidget(plot_widget)
 
     layer_controls.dimension_widget.update_status.connect(
-        widget.update_properties_and_callback
+        widget.update_properties
     )
 
     layer = viewer.add_labels(img_4d())
@@ -57,7 +57,9 @@ def test_table_single_selection(setup_props_widget, qtbot):
     assert isinstance(layer.colormap, DirectLabelColormap)
 
     assert float(layer.colormap.color_dict[1][-1]) == 1.0
-    np.testing.assert_allclose(layer.colormap.color_dict[2][-1], 0.6, rtol=1e-6)
+    np.testing.assert_allclose(
+        layer.colormap.color_dict[2][-1], 0.6, rtol=1e-6
+    )
 
 
 # Range selection
@@ -112,14 +114,18 @@ def test_table_right_click_special_selection(setup_props_widget, qtbot):
     row4 = 4
 
     # simulate right-click without qtbot
-    widget._clicked_table(right=True, ctrl=False, index=table.model().index(row2, 0))
+    widget._clicked_table(
+        right=True, ctrl=False, index=table.model().index(row2, 0)
+    )
     qtbot.waitUntil(lambda: widget._update_label_colormap.called, timeout=1000)
     assert isinstance(layer.colormap, DirectLabelColormap)
     assert widget.special_selection == [widget._table["label"][row2]]
     assert float(layer.colormap.color_dict[0][-1]) == 0.0
     assert float(layer.colormap.color_dict[2][-1]) == 1.0
 
-    widget._clicked_table(right=True, ctrl=True, index=table.model().index(row4, 0))
+    widget._clicked_table(
+        right=True, ctrl=True, index=table.model().index(row4, 0)
+    )
 
     qtbot.waitUntil(
         lambda: float(layer.colormap.color_dict[row4][-1]) == 1.0, timeout=1000

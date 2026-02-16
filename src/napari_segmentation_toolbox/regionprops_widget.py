@@ -161,7 +161,7 @@ class RegionPropsWidget(BaseToolWidget):
     def __init__(
         self, viewer: "napari.viewer.Viewer", layer_type=(napari.layers.Labels)
     ) -> None:
-        super().__init__(viewer, layer_type)
+        super().__init__(viewer, layer_type, mode="emit_layer_name")
 
         self.tab_widget = QTabWidget(self)
         self.table = None
@@ -255,8 +255,8 @@ class RegionPropsWidget(BaseToolWidget):
         self.setLayout(layout)
 
         # connect to update signal
-        self.update_status.connect(self.update_properties_and_callback)
-        self.update_properties_and_callback()
+        self.layer_updated.connect(self.update_layer)
+        self.update_layer(self.layer)
 
     def _update_measure_btn_state(self, state: int | None = None) -> None:
         """Update the button state according to whether at least one checkbox is checked"""
@@ -321,17 +321,26 @@ class RegionPropsWidget(BaseToolWidget):
             # was used
             self._process_click(event, copied_layer)
 
-    def update_properties_and_callback(self) -> None:
+    def update_layer(self, layer_name: str | None) -> None:
         """Update the available properties based on the selected label layer dimensions"""
+
         if self.layer is not None and self._source_props_callback is not None:
             with contextlib.suppress(ValueError):
                 self.layer.mouse_drag_callbacks.remove(
                     self._source_props_callback
                 )
 
-        if self.layer is not None:
+        if layer_name is not None:
+            self.layer = self.viewer.layers[layer_name]
             self._source_props_callback = self._table_callback(self.layer)
             self.layer.mouse_drag_callbacks.append(self._source_props_callback)
+        else:
+            self.layer = None
+
+        self.update_properties()
+
+    def update_properties(self):
+        """Update the buttons for the available properties depending on the layer's metadata"""
 
         if self.layer is not None and "dimensions" in self.layer.metadata:
             dims = self.layer.metadata["dimensions"]
@@ -482,6 +491,7 @@ class RegionPropsWidget(BaseToolWidget):
 
         # concatenate all properties
         props = pd.concat(prop_list, ignore_index=True)
+        props["label"] = props["label"].astype("int")
 
         # update layer properties
         self.layer.properties = props

@@ -17,7 +17,7 @@ def test_regionprops_widget(make_napari_viewer, qtbot, img_3d):
     qtbot.addWidget(plot_widget)
 
     layer_controls.dimension_widget.update_status.connect(
-        regionprops_widget.update_properties_and_callback
+        regionprops_widget.update_properties
     )
 
     layer = viewer.add_labels(img_3d())
@@ -36,7 +36,9 @@ def test_regionprops_widget(make_napari_viewer, qtbot, img_3d):
     assert plot_widget.x_combo.currentText() == "label"
     assert plot_widget.y_combo.currentText() == "volume"
 
-    regionprops_widget.color_by_feature_widget.property.setCurrentText("volume")
+    regionprops_widget.color_by_feature_widget.property.setCurrentText(
+        "volume"
+    )
     regionprops_widget.color_by_feature_widget._color_by_feature()
     assert len(viewer.layers) == 2
 
