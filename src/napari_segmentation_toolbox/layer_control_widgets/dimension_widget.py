@@ -47,9 +47,13 @@ class DimensionWidget(BaseToolWidget):
 
         # Headers
         self.grid.addWidget(QLabel("Axis"), 0, 0, alignment=Qt.AlignHCenter)
-        self.grid.addWidget(QLabel("New axis order"), 0, 1, alignment=Qt.AlignHCenter)
+        self.grid.addWidget(
+            QLabel("New axis order"), 0, 1, alignment=Qt.AlignHCenter
+        )
         self.grid.addWidget(QLabel("Name"), 0, 2, alignment=Qt.AlignHCenter)
-        self.grid.addWidget(QLabel("Pixel scaling"), 0, 3, alignment=Qt.AlignHCenter)
+        self.grid.addWidget(
+            QLabel("Pixel scaling"), 0, 3, alignment=Qt.AlignHCenter
+        )
 
         # Per-row widgets
         self.orig_labels = []  # QLabel showing e.g. "0 [512]"
@@ -66,7 +70,9 @@ class DimensionWidget(BaseToolWidget):
             pos_combo = QComboBox()
             pos_combo.setVisible(False)
             pos_combo.setEnabled(False)
-            pos_combo.currentIndexChanged.connect(self._update_axis_apply_state)
+            pos_combo.currentIndexChanged.connect(
+                self._update_axis_apply_state
+            )
             self.grid.addWidget(
                 pos_combo, i + 1, 1, alignment=Qt.AlignRight
             )  # position combobox to the right of label
@@ -75,7 +81,9 @@ class DimensionWidget(BaseToolWidget):
             name_widget = QComboBox()
             name_widget.setVisible(False)
             name_widget.setEnabled(False)
-            name_widget.currentIndexChanged.connect(self._update_name_apply_state)
+            name_widget.currentIndexChanged.connect(
+                self._update_name_apply_state
+            )
 
             self.grid.addWidget(name_widget, i + 1, 2)
             self.name_widgets.append(name_widget)
@@ -84,6 +92,7 @@ class DimensionWidget(BaseToolWidget):
             scale_spin.setSingleStep(0.1)
             scale_spin.setMinimum(0.01)
             scale_spin.setValue(1.0)
+            scale_spin.setDecimals(3)
             scale_spin.setVisible(False)
             scale_spin.setEnabled(False)
             scale_spin.editingFinished.connect(
@@ -175,7 +184,9 @@ class DimensionWidget(BaseToolWidget):
                     if i >= ndim - 2:
                         # last two are Y, X — show a disabled combobox
                         name_w.clear()
-                        name_w.addItems(["Y", "X"] if (ndim - i == 2) else ["X"])
+                        name_w.addItems(
+                            ["Y", "X"] if (ndim - i == 2) else ["X"]
+                        )
                         name_w.setEnabled(False)
                         name_w.setCurrentIndex(0)
                     else:
@@ -248,7 +259,9 @@ class DimensionWidget(BaseToolWidget):
             self.apply_axis_btn.setStyleSheet("")
         else:
             self.apply_axis_btn.setEnabled(True)
-            self.apply_axis_btn.setStyleSheet("QPushButton { border: 2px solid cyan; }")
+            self.apply_axis_btn.setStyleSheet(
+                "QPushButton { border: 2px solid cyan; }"
+            )
 
     def _update_name_apply_state(self) -> None:
         """Enable apply for name only when names are valid and different from current metadata (if present)."""
@@ -257,7 +270,9 @@ class DimensionWidget(BaseToolWidget):
             self.apply_name_btn.setEnabled(False)
             return
 
-        names = [w.currentText() for w in self.name_widgets if w.isEnabled()] + [
+        names = [
+            w.currentText() for w in self.name_widgets if w.isEnabled()
+        ] + [
             "Y",
             "X",
         ]
@@ -270,7 +285,9 @@ class DimensionWidget(BaseToolWidget):
             return
 
         self.apply_name_btn.setEnabled(True)
-        self.apply_name_btn.setStyleSheet("QPushButton { border: 2px solid cyan; }")
+        self.apply_name_btn.setStyleSheet(
+            "QPushButton { border: 2px solid cyan; }"
+        )
 
     def _apply_axis_reorder(self):
         """Read position comboboxes and transpose layer.data accordingly."""
@@ -279,9 +296,13 @@ class DimensionWidget(BaseToolWidget):
             return
 
         ndim = self.layer.data.ndim
-        new_order = [int(c.currentText()) for c in self.pos_combos if c.isEnabled()]
+        new_order = [
+            int(c.currentText()) for c in self.pos_combos if c.isEnabled()
+        ]
 
-        if new_order == list(range(ndim)) or len(new_order) != len(set(new_order)):
+        if new_order == list(range(ndim)) or len(new_order) != len(
+            set(new_order)
+        ):
             return
 
         # transpose data
