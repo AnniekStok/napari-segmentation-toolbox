@@ -22,7 +22,9 @@ class PlaneSliderWidget(BaseToolWidget):
         self,
         viewer: napari.Viewer,
     ):
-        super().__init__(viewer, layer_type=(napari.layers.Labels, napari.layers.Image))
+        super().__init__(
+            viewer, layer_type=(napari.layers.Labels, napari.layers.Image)
+        )
 
         box = QGroupBox("(Clipping) plane sliders")
         box_layout = QVBoxLayout()
@@ -30,7 +32,7 @@ class PlaneSliderWidget(BaseToolWidget):
         self.viewer.dims.events.ndisplay.connect(self.on_ndisplay_changed)
         self.update_status.connect(self._update_sliders)
 
-        self.mode = "slice"
+        self.depiction_mode = "slice"
 
         # Add buttons to switch between plane and volume mode
         button_layout = QVBoxLayout()
@@ -86,7 +88,9 @@ class PlaneSliderWidget(BaseToolWidget):
         clipping_plane_layout.addWidget(QLabel("Clipping Plane"))
         self.clipping_plane_slider = QLabeledRangeSlider(QtCore.Qt.Horizontal)
         self.clipping_plane_slider.setValue((0, 1))
-        self.clipping_plane_slider.valueChanged.connect(self._set_clipping_plane)
+        self.clipping_plane_slider.valueChanged.connect(
+            self._set_clipping_plane
+        )
         self.clipping_plane_slider.setSingleStep(1)
         self.clipping_plane_slider.setTickInterval(1)
         self.clipping_plane_slider.setEnabled(False)
@@ -281,7 +285,9 @@ class PlaneSliderWidget(BaseToolWidget):
             self.plane_slider.setMaximum(int(max_range))
             self.plane_slider.setValue(int(max_range / 2))
 
-            self.layer.experimental_clipping_planes[0].normal = self.layer.plane.normal
+            self.layer.experimental_clipping_planes[
+                0
+            ].normal = self.layer.plane.normal
             self.layer.experimental_clipping_planes[1].normal = (
                 -self.layer.plane.normal[-3],
                 -self.layer.plane.normal[-2],
@@ -307,21 +313,35 @@ class PlaneSliderWidget(BaseToolWidget):
     def _update_clipping_plane_slider(self):
         """Updates the values of the clipping plane slider when switching between different layers"""
 
-        new_position = np.array(self.layer.experimental_clipping_planes[0].position)
-        plane_normal = np.array(self.layer.experimental_clipping_planes[0].normal)
+        new_position = np.array(
+            self.layer.experimental_clipping_planes[0].position
+        )
+        plane_normal = np.array(
+            self.layer.experimental_clipping_planes[0].normal
+        )
         slider_value1 = np.dot(new_position, plane_normal) / np.dot(
             plane_normal, plane_normal
         )
 
-        new_position = np.array(self.layer.experimental_clipping_planes[1].position)
-        plane_normal = np.array(self.layer.experimental_clipping_planes[0].normal)
+        new_position = np.array(
+            self.layer.experimental_clipping_planes[1].position
+        )
+        plane_normal = np.array(
+            self.layer.experimental_clipping_planes[0].normal
+        )
         slider_value2 = np.dot(new_position, plane_normal) / np.dot(
             plane_normal, plane_normal
         )
 
-        self.clipping_plane_slider.valueChanged.disconnect(self._set_clipping_plane)
-        self.clipping_plane_slider.setValue((int(slider_value1), int(slider_value2)))
-        self.clipping_plane_slider.valueChanged.connect(self._set_clipping_plane)
+        self.clipping_plane_slider.valueChanged.disconnect(
+            self._set_clipping_plane
+        )
+        self.clipping_plane_slider.setValue(
+            (int(slider_value1), int(slider_value2))
+        )
+        self.clipping_plane_slider.valueChanged.connect(
+            self._set_clipping_plane
+        )
 
     def _update_plane_slider(self):
         """Updates the value of the plane slider when the user used the shift+drag method to shift the plane or when switching between different layers"""
@@ -338,7 +358,7 @@ class PlaneSliderWidget(BaseToolWidget):
     def _set_plane_mode(self) -> None:
         """Activate the plane mode on the current layer"""
 
-        self.mode = "plane"
+        self.depiction_mode = "plane"
         self.layer.events.depiction.disconnect(self._update_mode)
         self.layer.depiction = "plane"
         self.layer.events.depiction.connect(self._update_mode)
@@ -365,7 +385,7 @@ class PlaneSliderWidget(BaseToolWidget):
     def _set_clipping_plane_mode(self) -> None:
         """Activate the clipping plane mode on the current layer"""
 
-        self.mode = "clipping_plane"
+        self.depiction_mode = "clipping_plane"
         self.layer.events.depiction.disconnect(self._update_mode)
         self.layer.depiction = "volume"
         self.layer.events.depiction.connect(self._update_mode)
@@ -394,7 +414,7 @@ class PlaneSliderWidget(BaseToolWidget):
     def _set_volume_mode(self) -> None:
         """Deactive plane viewing and go back to default volume viewing"""
 
-        self.mode = "volume"
+        self.depiction_mode = "volume"
 
         self.plane_btn.setEnabled(True)
         self.clipping_plane_btn.setEnabled(True)
@@ -422,7 +442,7 @@ class PlaneSliderWidget(BaseToolWidget):
             self.clipping_plane_btn.setEnabled(False)
             self.plane_slider.setEnabled(False)
             self.clipping_plane_slider.setEnabled(False)
-            self.mode = "slice"
+            self.depiction_mode = "slice"
             self.plane_labels.setVisible(False)
             self.plane_widget.setVisible(False)
             self.clipping_plane_widget.setVisible(False)
@@ -443,7 +463,9 @@ class PlaneSliderWidget(BaseToolWidget):
     def _set_clipping_plane(self) -> None:
         """Adjust the range of the clipping plane"""
 
-        plane_normal = np.array(self.layer.experimental_clipping_planes[0].normal)
+        plane_normal = np.array(
+            self.layer.experimental_clipping_planes[0].normal
+        )
         slider_value = self.clipping_plane_slider.value()
         new_position_1 = np.array([0, 0, 0]) + slider_value[0] * plane_normal
         new_position_1 = (
